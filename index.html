@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrepGenAI – Virtual Voice Interview</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060a14;
+  --bg2: #0d1525;
+  --bg3: #111d35;
+  --surface: #162040;
+  --border: rgba(99,179,255,0.12);
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --accent3: #8b5cf6;
+  --gold: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #e2eaf4;
+  --text2: #8ba0c0;
+  --text3: #4a6080;
+  --glow: 0 0 40px rgba(59,130,246,0.25);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── NOISE OVERLAY ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.4;}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;position:relative;z-index:1;}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+.sidebar-logo h1{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2;}
+.sidebar-logo p{font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:0.08em;text-transform:uppercase;}
+.sidebar-nav{padding:16px 12px;flex:1;}
+.nav-label{font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);padding:4px 8px;margin-bottom:4px;margin-top:12px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;font-size:13px;color:var(--text2);font-weight:500;}
+.nav-item:hover{background:var(--surface);color:var(--text);}
+.nav-item.active{background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(6,182,212,0.1));color:var(--accent);border:1px solid rgba(59,130,246,0.25);}
+.nav-item .icon{width:16px;text-align:center;font-size:14px;}
+.field-badge{margin-left:auto;font-size:10px;background:var(--bg3);padding:2px 7px;border-radius:20px;color:var(--text3);}
+.sidebar-bottom{padding:16px;border-top:1px solid var(--border);}
+.sidebar-bottom .nav-item{font-size:12px;}
+
+/* ── MAIN CONTENT ── */
+.main{display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-left h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;}
+.topbar-left p{font-size:12px;color:var(--text2);margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);font-weight:600;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
+
+/* ── AUTH BUTTONS ── */
+.btn-login{background:transparent;border:1.5px solid var(--accent);color:var(--accent);padding:7px 18px;border-radius:9px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s;}
+.btn-login:hover{background:rgba(59,130,246,0.1);}
+.btn-signup{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;padding:7px 18px;border-radius:9px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s;}
+.btn-signup:hover{opacity:0.9;transform:translateY(-1px);}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);padding:5px 12px 5px 6px;border-radius:9px;font-size:13px;font-weight:500;}
+.u-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;}
+.btn-logout{background:transparent;border:1px solid rgba(239,68,68,0.3);color:var(--red);padding:6px 13px;border-radius:9px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;}
+.btn-logout:hover{background:rgba(239,68,68,0.08);}
+
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(6,10,20,0.88);backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:100%;max-width:400px;position:relative;box-shadow:0 0 60px rgba(59,130,246,0.15);}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;line-height:1;transition:color 0.2s;}
+.modal-close:hover{color:var(--text);}
+.modal-brand{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.modal-brand-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:17px;}
+.modal-brand h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.modal-title{font-family:'Syne',sans-serif;font-size:21px;font-weight:700;margin-bottom:5px;}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:22px;}
+.form-grp{margin-bottom:14px;}
+.form-grp label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;letter-spacing:0.04em;text-transform:uppercase;}
+.form-grp input{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;}
+.form-grp input:focus{border-color:var(--accent);}
+.form-grp input::placeholder{color:var(--text3);}
+    .field-err{display:block;font-size:11px;color:#f87171;margin-top:4px;min-height:16px;}
+    .form-grp input.input-err{border-color:#f87171 !important;}
+
+.modal-err{font-size:12px;color:var(--red);margin-bottom:12px;display:none;padding:8px 11px;background:rgba(239,68,68,0.07);border-radius:8px;border:1px solid rgba(239,68,68,0.2);}
+.modal-err.show{display:block;}
+.btn-modal-primary{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;padding:12px;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:2px;}
+.btn-modal-primary:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-modal-primary:disabled{opacity:0.55;cursor:not-allowed;transform:none;}
+.modal-switch{text-align:center;margin-top:16px;font-size:13px;color:var(--text2);}
+.modal-switch a{color:var(--accent);font-weight:600;cursor:pointer;}
+.modal-switch a:hover{text-decoration:underline;}
+
+/* ── PAGES ── */
+.page{display:none;padding:28px 32px;flex:1;}
+.page.active{display:block;}
+
+/* ── DASHBOARD ── */
+.dash-grid{display:grid;grid-template-columns:1fr 380px;gap:24px;}
+.field-list h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:14px;}
+.field-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;gap:14px;}
+.field-card:hover{border-color:var(--accent);transform:translateX(4px);background:var(--surface);}
+.field-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.field-info h4{font-size:14px;font-weight:600;}
+.field-info p{font-size:11px;color:var(--text2);margin-top:2px;}
+.field-arrow{margin-left:auto;color:var(--text3);font-size:18px;}
+.right-panel{display:flex;flex-direction:column;gap:20px;}
+
+/* ── INTERVIEW PREVIEW BOX ── */
+.preview-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.preview-header{padding:14px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text2);letter-spacing:0.05em;text-transform:uppercase;}
+.preview-body{padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+.ai-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;box-shadow:0 0 40px rgba(59,130,246,0.4);}
+.ai-avatar::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(59,130,246,0.3);animation:spin 4s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.avatar-waves{display:flex;gap:4px;align-items:center;height:30px;}
+.wave{width:3px;border-radius:3px;background:var(--accent);animation:wave 1.2s ease-in-out infinite;}
+.wave:nth-child(1){height:10px;animation-delay:0s;}
+.wave:nth-child(2){height:20px;animation-delay:0.1s;}
+.wave:nth-child(3){height:28px;animation-delay:0.2s;}
+.wave:nth-child(4){height:20px;animation-delay:0.3s;}
+.wave:nth-child(5){height:10px;animation-delay:0.4s;}
+@keyframes wave{0%,100%{transform:scaleY(0.5);}50%{transform:scaleY(1.5);}}
+.wave.inactive{animation:none;opacity:0.3;height:10px!important;}
+.preview-status{font-size:12px;color:var(--text2);}
+
+/* ── TECH / FEATURES CARDS ── */
+.info-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.info-card h3{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--accent2);}
+.info-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);}
+.info-row:last-child{border:none;}
+.info-row span:first-child{color:var(--text2);}
+.info-row span:last-child{color:var(--text);font-weight:500;}
+.feat-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0;color:var(--text2);}
+.feat-item::before{content:'✓';color:var(--green);font-weight:700;}
+
+/* ── INTERVIEW PAGE ── */
+#interviewPage{display:none;flex-direction:column;}
+#interviewPage.active{display:flex;}
+.interview-layout{display:grid;grid-template-columns:1fr 360px;gap:24px;flex:1;}
+.q-area{display:flex;flex-direction:column;gap:16px;}
+.q-header{display:flex;align-items:center;justify-content:space-between;}
+.q-progress-wrap{margin-bottom:4px;}
+.q-progress-bar{height:4px;background:var(--surface);border-radius:2px;overflow:hidden;}
+.q-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width 0.4s ease;}
+.q-counter{font-size:12px;color:var(--text2);}
+.question-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;min-height:140px;display:flex;flex-direction:column;justify-content:center;}
+.question-field-tag{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;}
+.question-text{font-family:'Syne',sans-serif;font-size:17px;font-weight:600;line-height:1.5;}
+.answer-area{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.answer-header{padding:12px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;justify-content:space-between;}
+.rec-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);}
+.rec-indicator.recording{color:var(--red);}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);}
+.rec-indicator.recording .rec-dot{background:var(--red);animation:pulse 0.8s infinite;}
+.answer-text{width:100%;min-height:120px;background:transparent;border:none;outline:none;padding:16px 18px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);resize:vertical;}
+.answer-text::placeholder{color:var(--text3);}
+.btn-row{display:flex;gap:10px;padding:12px 18px;border-top:1px solid var(--border);}
+.btn{padding:9px 20px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;gap:7px;}
+.btn-record{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.btn-record:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-record.active{background:linear-gradient(135deg,var(--red),#dc2626);}
+.btn-stop{background:var(--surface);color:var(--text2);border:1px solid var(--border);}
+.btn-stop:hover{color:var(--text);background:var(--bg3);}
+.btn-next{background:var(--green);color:#fff;margin-left:auto;}
+.btn-next:hover{opacity:0.9;}
+.btn-next:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-skip{background:transparent;color:var(--text3);border:1px solid var(--border);font-size:12px;}
+.btn-end{background:var(--surface);color:var(--red);border:1px solid rgba(239,68,68,0.3);margin-left:auto;}
+
+/* ── AI FEEDBACK PANEL ── */
+.feedback-panel{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;height:fit-content;}
+.feedback-panel h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.ai-chip{font-size:9px;background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;padding:2px 8px;border-radius:20px;font-weight:600;letter-spacing:0.06em;}
+.score-ring{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.score-circle{width:72px;height:72px;position:relative;display:flex;align-items:center;justify-content:center;}
+.score-circle svg{position:absolute;inset:0;transform:rotate(-90deg);}
+.score-circle .score-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;z-index:1;}
+.score-label{font-size:11px;color:var(--text2);}
+.feedback-text{font-size:13px;line-height:1.6;color:var(--text2);background:var(--bg3);border-radius:10px;padding:12px;border-left:3px solid var(--accent);}
+.suggestions-list{display:flex;flex-direction:column;gap:6px;}
+.sug-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent2);}
+.sug-item{display:flex;gap:8px;font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg3);border-radius:8px;}
+.sug-item::before{content:'→';color:var(--accent);flex-shrink:0;}
+.strength-item{display:flex;gap:8px;font-size:12px;color:var(--text2);padding:6px 10px;background:rgba(16,185,129,0.08);border-radius:8px;border:1px solid rgba(16,185,129,0.15);}
+.strength-item::before{content:'✓';color:var(--green);flex-shrink:0;}
+.feedback-loading{display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px;}
+.dots{display:flex;gap:6px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:dot-bounce 1.4s ease-in-out infinite;}
+.dot:nth-child(2){animation-delay:0.2s;}
+.dot:nth-child(3){animation-delay:0.4s;}
+@keyframes dot-bounce{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
+
+/* ── AI INTERVIEWER AVATAR PANEL ── */
+.interviewer-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;}
+.int-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent3),var(--accent));margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 0 24px rgba(139,92,246,0.4);}
+.int-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+.int-role{font-size:11px;color:var(--text3);margin-top:2px;}
+.speaking-waves{display:flex;justify-content:center;gap:3px;align-items:center;margin-top:10px;height:24px;}
+.speaking-wave{width:3px;border-radius:2px;background:var(--accent3);}
+
+/* ── RESULTS PAGE ── */
+.results-header{text-align:center;margin-bottom:28px;}
+.results-header h2{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.results-header p{color:var(--text2);margin-top:6px;}
+.results-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;}
+.stat-val{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
+.result-qa-list{display:flex;flex-direction:column;gap:12px;}
+.result-qa{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.result-qa-q{font-size:13px;font-weight:600;margin-bottom:8px;}
+.result-qa-a{font-size:12px;color:var(--text2);margin-bottom:8px;font-style:italic;padding:8px 10px;background:var(--bg3);border-radius:8px;}
+.result-qa-fb{font-size:12px;color:var(--text2);border-left:3px solid var(--accent);padding-left:10px;margin-bottom:8px;line-height:1.6;}
+.result-score-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--surface);margin-bottom:8px;}
+.result-strengths{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.result-tag{font-size:11px;padding:3px 10px;border-radius:20px;}
+.result-tag.green{background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.2);}
+.result-tag.blue{background:rgba(59,130,246,0.12);color:var(--accent);border:1px solid rgba(59,130,246,0.2);}
+.result-better{font-size:12px;color:var(--text2);padding:8px 12px;background:rgba(59,130,246,0.06);border-radius:8px;border:1px solid rgba(59,130,246,0.15);margin-top:6px;}
+.result-better strong{color:var(--accent2);display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;}
+.btn-restart{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:12px 28px;border-radius:12px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-top:20px;display:block;margin-inline:auto;}
+
+/* ── HISTORY PAGE ── */
+.history-list{display:flex;flex-direction:column;gap:10px;}
+.hist-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;}
+.hist-field{font-size:14px;font-weight:600;flex:1;}
+.hist-meta{font-size:11px;color:var(--text2);}
+.hist-score{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .dash-grid{grid-template-columns:1fr;}
+  .interview-layout{grid-template-columns:1fr;}
+}
+.hidden{display:none!important;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 18px;font-size:13px;z-index:9999;animation:slide-in 0.3s ease;}
+.toast.success{border-color:rgba(16,185,129,0.3);color:var(--green);}
+.toast.error{border-color:rgba(239,68,68,0.3);color:var(--red);}
+@keyframes slide-in{from{transform:translateX(100px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN MODAL ══════════════ -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('loginModal')">✕</button>
+    <div class="modal-brand">
+      <div class="modal-brand-icon">🤖</div>
+      <h2>PrepGenAI</h2>
+    </div>
+    <div class="modal-title">Welcome Back</div>
+    <div class="modal-sub">Sign in to continue your journey</div>
+    <div class="modal-err" id="loginErr"></div>
+    <div class="form-grp">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()" oninput="clearFieldErr('loginEmailErr','loginEmail')"/>
+      <span class="field-err" id="loginEmailErr"></span>
+    </div>
+    <div class="form-grp">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" oninput="clearFieldErr('loginPassErr','loginPass')"/>
+      <span class="field-err" id="loginPassErr"></span>
+    </div>
+    <button class="btn-modal-primary" id="loginBtn" onclick="doLogin()">Sign In →</button>
+    <div class="modal-switch">Don't have an account? <a onclick="switchModal('loginModal','signupModal')">Create one</a></div>
+  </div>
+</div>
+
+<!-- ══════════════ SIGNUP MODAL ══════════════ -->
+<div class="modal-overlay" id="signupModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('signupModal')">✕</button>
+    <div class="modal-brand">
+      <div class="modal-brand-icon">🤖</div>
+      <h2>PrepGenAI</h2>
+    </div>
+    <div class="modal-title">Create Account</div>
+    <div class="modal-sub">Join and start practicing with AI</div>
+    <div class="modal-err" id="signupErr"></div>
+    <div class="form-grp">
+      <label>Full Name</label>
+      <input type="text" id="signupName" placeholder="Your Name" oninput="clearFieldErr('signupNameErr','signupName')"/>
+      <span class="field-err" id="signupNameErr"></span>
+    </div>
+    <div class="form-grp">
+      <label>Email Address</label>
+      <input type="email" id="signupEmail" placeholder="your@email.com" oninput="clearFieldErr('signupEmailErr','signupEmail')"/>
+      <span class="field-err" id="signupEmailErr"></span>
+    </div>
+    <div class="form-grp">
+      <label>Phone Number (Optional)</label>
+      <input type="tel" id="signupPhone" placeholder="+91 9876543210" oninput="clearFieldErr('signupPhoneErr','signupPhone')"/>
+      <span class="field-err" id="signupPhoneErr"></span>
+    </div>
+    <div class="form-grp">
+      <label>Password</label>
+      <input type="password" id="signupPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignup()" oninput="clearFieldErr('signupPassErr','signupPass')"/>
+      <span class="field-err" id="signupPassErr"></span>
+    </div>
+    <button class="btn-modal-primary" id="signupBtn" onclick="doSignup()">Register Now →</button>
+    <div class="modal-switch">Already have an account? <a onclick="switchModal('signupModal','loginModal')">Sign in</a></div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN LAYOUT ══════════════ -->
+<div class="layout">
+
+  <!-- SIDEBAR — same as original -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>PrepGenAI</h1>
+      <p>Virtual Interview Coach</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Menu</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+        <span class="icon">⚡</span> Dashboard
+      </div>
+      <div class="nav-label">Fields</div>
+      <div class="nav-item" id="nav-da" onclick="startField('Data Analytics')">
+        <span class="icon">📊</span> Data Analytics <span class="field-badge">20 Q</span>
+      </div>
+      <div class="nav-item" id="nav-wd" onclick="startField('Web Development')">
+        <span class="icon">🌐</span> Web Developer <span class="field-badge">20 Q</span>
+      </div>
+      <div class="nav-item" id="nav-bd" onclick="startField('Backend Developer')">
+        <span class="icon">⚙️</span> Backend Developer <span class="field-badge">20 Q</span>
+      </div>
+      <div class="nav-item" id="nav-cs" onclick="startField('Cyber Security')">
+        <span class="icon">🔒</span> Cyber Security <span class="field-badge">20 Q</span>
+      </div>
+      <div class="nav-item" id="nav-ux" onclick="startField('UI/UX Designer')">
+        <span class="icon">🎨</span> UI/UX Designer <span class="field-badge">20 Q</span>
+      </div>
+      <div class="nav-item" id="nav-dv" onclick="startField('DevOps Engineer')">
+        <span class="icon">🚀</span> DevOps Engineer <span class="field-badge">20 Q</span>
+      </div>
+      <div class="nav-label">Account</div>
+      <div class="nav-item" id="nav-history" onclick="showPage('history')">
+        <span class="icon">📋</span> History
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="nav-item" onclick="showPage('settings')">
+        <span class="icon">⚙️</span> Settings
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR — original + auth buttons added -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h2 id="pageTitle">Dashboard</h2>
+        <p id="pageSubtitle">Choose a field to start your interview</p>
+      </div>
+      <div class="topbar-right">
+        <div class="live-badge"><span class="live-dot"></span> Live</div>
+        <!-- Auth buttons -->
+        <div id="authBtns" style="display:flex;gap:8px;">
+          <button class="btn-login" onclick="openModal('loginModal')">Log In</button>
+          <button class="btn-signup" onclick="openModal('signupModal')">Sign Up</button>
+        </div>
+        <!-- User chip (shown after login) -->
+        <div id="userChip" class="hidden" style="display:flex;align-items:center;gap:8px;">
+          <div class="user-chip">
+            <div class="u-avatar" id="uAvatar">U</div>
+            <span id="uName">User</span>
+          </div>
+          <button class="btn-logout" onclick="doLogout()">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DASHBOARD PAGE — exactly same as original ═══ -->
+    <div class="page active" id="dashboardPage">
+      <div class="dash-grid">
+        <div class="field-list">
+          <h3>Choose Your Interview Field</h3>
+          <div class="field-card" onclick="startField('Data Analytics')">
+            <div class="field-icon" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">📊</div>
+            <div class="field-info"><h4>Data Analytics</h4><p>Statistics, ML, SQL, Visualization</p></div>
+            <span class="field-arrow">›</span>
+          </div>
+          <div class="field-card" onclick="startField('Web Development')">
+            <div class="field-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">🌐</div>
+            <div class="field-info"><h4>Web Development</h4><p>HTML, CSS, JS, React, APIs</p></div>
+            <span class="field-arrow">›</span>
+          </div>
+          <div class="field-card" onclick="startField('Backend Developer')">
+            <div class="field-icon" style="background:linear-gradient(135deg,#10b981,#059669)">⚙️</div>
+            <div class="field-info"><h4>Backend Developer</h4><p>Node.js, Databases, REST, Scaling</p></div>
+            <span class="field-arrow">›</span>
+          </div>
+          <div class="field-card" onclick="startField('Cyber Security')">
+            <div class="field-icon" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">🔒</div>
+            <div class="field-info"><h4>Cyber Security</h4><p>Encryption, OWASP, Pen Testing</p></div>
+            <span class="field-arrow">›</span>
+          </div>
+          <div class="field-card" onclick="startField('UI/UX Designer')">
+            <div class="field-icon" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">🎨</div>
+            <div class="field-info"><h4>UI/UX Designer</h4><p>Design Systems, User Research, Figma</p></div>
+            <span class="field-arrow">›</span>
+          </div>
+          <div class="field-card" onclick="startField('DevOps Engineer')">
+            <div class="field-icon" style="background:linear-gradient(135deg,#f97316,#ea580c)">🚀</div>
+            <div class="field-info"><h4>DevOps Engineer</h4><p>Docker, K8s, CI/CD, Cloud</p></div>
+            <span class="field-arrow">›</span>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <!-- Preview — same as original -->
+          <div class="preview-box">
+            <div class="preview-header">Interview Preview</div>
+            <div class="preview-body">
+              <div class="ai-avatar">🤖</div>
+              <div class="avatar-waves" id="previewWaves">
+                <div class="wave inactive"></div>
+                <div class="wave inactive"></div>
+                <div class="wave inactive"></div>
+                <div class="wave inactive"></div>
+                <div class="wave inactive"></div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:14px;font-weight:600;">AI Interviewer</div>
+                <div class="preview-status">Select a field to begin</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tech Stack — same -->
+          <div class="info-card">
+            <h3>Tech Stack</h3>
+            <div class="info-row"><span>Frontend</span><span>HTML · CSS · JS</span></div>
+            <div class="info-row"><span>Backend</span><span>Node.js · Express</span></div>
+            <div class="info-row"><span>Database</span><span>SQLite</span></div>
+            <div class="info-row"><span>AI</span><span>Groq · Llama 3</span></div>
+            <div class="info-row"><span>Voice</span><span>Web Speech API</span></div>
+          </div>
+
+          <!-- Features — same -->
+          <div class="info-card">
+            <h3>Features</h3>
+            <div class="feat-item">6 Interview Fields</div>
+            <div class="feat-item">20 Questions per Field</div>
+            <div class="feat-item">Voice-Based AI Interview</div>
+            <div class="feat-item">Voice to Text Capture</div>
+            <div class="feat-item">AI Suggestions & Feedback</div>
+            <div class="feat-item">Interview History & Scores</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ INTERVIEW PAGE — same as original ═══ -->
+    <div class="page" id="interviewPage">
+      <div class="interview-layout">
+        <!-- Left: Question + Answer -->
+        <div class="q-area">
+          <div class="q-header">
+            <div>
+              <div class="q-progress-wrap">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                  <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;" id="fieldName">—</span>
+                  <span class="q-counter"><span id="qCurrent">1</span> / <span id="qTotal">20</span></span>
+                </div>
+                <div class="q-progress-bar"><div class="q-progress-fill" id="qProgress" style="width:5%"></div></div>
+              </div>
+            </div>
+            <button class="btn btn-end" onclick="endInterview()">⏹ End Interview</button>
+          </div>
+
+          <div class="question-card">
+            <div class="question-field-tag" id="qFieldTag">—</div>
+            <div class="question-text" id="questionText">Loading question...</div>
+          </div>
+
+          <div class="answer-area">
+            <div class="answer-header">
+              Your Answer (Voice → Text)
+              <div class="rec-indicator" id="recIndicator">
+                <span class="rec-dot"></span> <span id="recStatus">Ready</span>
+              </div>
+            </div>
+            <textarea class="answer-text" id="answerText" placeholder="Your transcribed answer will appear here... Or type manually."></textarea>
+            <div class="btn-row">
+              <button class="btn btn-record" id="btnRecord" onclick="toggleRecording()">🎤 Start Recording</button>
+              <button class="btn btn-skip" onclick="skipQuestion()">Skip →</button>
+              <button class="btn btn-next" id="btnNext" onclick="nextQuestion()" disabled>Next Question →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: AI Interviewer + Feedback -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="interviewer-box">
+            <div class="int-avatar">🤖</div>
+            <div class="int-name">ARIA</div>
+            <div class="int-role">AI Interview Coach</div>
+            <div class="speaking-waves" id="speakingWaves">
+              <div class="speaking-wave" style="height:8px;background:var(--accent3);border-radius:2px;width:3px;"></div>
+              <div class="speaking-wave" style="height:16px;background:var(--accent3);border-radius:2px;width:3px;animation:wave 1s infinite;"></div>
+              <div class="speaking-wave" style="height:22px;background:var(--accent3);border-radius:2px;width:3px;animation:wave 1s 0.15s infinite;"></div>
+              <div class="speaking-wave" style="height:16px;background:var(--accent3);border-radius:2px;width:3px;animation:wave 1s 0.3s infinite;"></div>
+              <div class="speaking-wave" style="height:8px;background:var(--accent3);border-radius:2px;width:3px;"></div>
+            </div>
+          </div>
+
+          <div class="feedback-panel" id="feedbackPanel">
+            <h3>AI Feedback <span class="ai-chip">GROQ</span></h3>
+            <div style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0;">
+              Answer a question to receive AI feedback and improvement suggestions.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RESULTS PAGE — same + better_answer added ═══ -->
+    <div class="page" id="resultsPage">
+      <div class="results-header">
+        <h2>🎉 Interview Complete!</h2>
+        <p id="resultsSubtitle">Here's how you performed</p>
+      </div>
+      <div class="results-stats">
+        <div class="stat-card">
+          <div class="stat-val" id="statAnswered">0</div>
+          <div class="stat-label">Questions Answered</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statScore">0</div>
+          <div class="stat-label">Average Score / 10</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statField">—</div>
+          <div class="stat-label">Field</div>
+        </div>
+      </div>
+      <div class="result-qa-list" id="resultsList"></div>
+      <button class="btn-restart" onclick="showPage('dashboard')">← Back to Dashboard</button>
+    </div>
+
+    <!-- ═══ HISTORY PAGE — same ═══ -->
+    <div class="page" id="historyPage">
+      <h3 style="font-family:'Syne',sans-serif;margin-bottom:16px;">Interview History</h3>
+      <div class="history-list" id="historyList">
+        <div style="color:var(--text3);font-size:14px;">Loading history...</div>
+      </div>
+    </div>
+
+    <!-- ═══ SETTINGS PAGE — same ═══ -->
+    <div class="page" id="settingsPage">
+      <h3 style="font-family:'Syne',sans-serif;margin-bottom:20px;">Settings</h3>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:500px;">
+        <div style="margin-bottom:20px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;">Speech Language</label>
+          <select id="langSelect" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;width:100%;outline:none;">
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="en-IN">English (India)</option>
+            <option value="hi-IN">Hindi</option>
+          </select>
+        </div>
+        <button onclick="saveSettings()" style="background:var(--accent);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;">Save Settings</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── STATE ── (same as original + currentUser added)
+const state = {
+  currentField: null,
+  questions: [],
+  currentIndex: 0,
+  sessionId: null,
+  results: [],
+  recognition: null,
+  isRecording: false,
+  speechLang: localStorage.getItem('speechLang') || 'en-US',
+};
+
+let currentUser = null;
+
+const API = '/api';
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('langSelect').value = state.speechLang;
+  setupSpeechRecognition();
+  // restore login
+  const saved = localStorage.getItem('prepgenai_user');
+  if (saved) { currentUser = JSON.parse(saved); updateAuthUI(); }
+});
+
+// ════════════════════════════════════════════
+//  AUTH UI
+// ════════════════════════════════════════════
+function updateAuthUI() {
+  if (currentUser) {
+    document.getElementById('authBtns').classList.add('hidden');
+    document.getElementById('userChip').classList.remove('hidden');
+    document.getElementById('uAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('uName').textContent = currentUser.name;
+  } else {
+    document.getElementById('authBtns').classList.remove('hidden');
+    document.getElementById('userChip').classList.add('hidden');
+  }
+}
+
+// ── MODAL HELPERS ──
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.getElementById(id).onclick = e => { if (e.target === document.getElementById(id)) closeModal(id); };
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function switchModal(from, to) { closeModal(from); setTimeout(() => openModal(to), 150); }
+
+// ── Helper functions for field validation ──
+function clearFieldErr(errId, inputId) {
+  var el = document.getElementById(errId);
+  var inp = document.getElementById(inputId);
+  if (el) el.textContent = '';
+  if (inp) inp.classList.remove('input-err');
+}
+function showFieldErr(errId, inputId, msg) {
+  var el = document.getElementById(errId);
+  var inp = document.getElementById(inputId);
+  if (el) el.textContent = msg;
+  if (inp) inp.classList.add('input-err');
+}
+
+// ── LOGIN ──
+async function doLogin() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var password = document.getElementById('loginPass').value;
+  var errEl = document.getElementById('loginErr');
+  var btn = document.getElementById('loginBtn');
+  errEl.classList.remove('show');
+  clearFieldErr('loginEmailErr','loginEmail');
+  clearFieldErr('loginPassErr','loginPass');
+
+  var hasErr = false;
+
+  // Email validation
+  if (!email) {
+    showFieldErr('loginEmailErr','loginEmail','Email address is required');
+    hasErr = true;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showFieldErr('loginEmailErr','loginEmail','Please enter a valid email address');
+    hasErr = true;
+  }
+
+  // Password validation
+  if (!password) {
+    showFieldErr('loginPassErr','loginPass','Password is required');
+    hasErr = true;
+  } else if (password.length < 6) {
+    showFieldErr('loginPassErr','loginPass','Password must be at least 6 characters');
+    hasErr = true;
+  }
+
+  if (hasErr) return;
+
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    var res = await fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    var data = await res.json();
+    if (data.success) {
+      currentUser = { userId: data.userId, name: data.name, email: data.email };
+      localStorage.setItem('prepgenai_user', JSON.stringify(currentUser));
+      updateAuthUI();
+      closeModal('loginModal');
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPass').value = '';
+      showToast('Welcome back, ' + data.name + '! \ud83d\udc4b');
+    } else {
+      errEl.textContent = data.message || 'Login failed';
+      errEl.classList.add('show');
+    }
+  } catch(e) { errEl.textContent = 'Network error. Is the server running?'; errEl.classList.add('show'); }
+  btn.disabled = false; btn.textContent = 'Sign In \u2192';
+}
+
+// ── SIGNUP ──
+async function doSignup() {
+  var name = document.getElementById('signupName').value.trim();
+  var email = document.getElementById('signupEmail').value.trim();
+  var phone = document.getElementById('signupPhone').value.trim();
+  var password = document.getElementById('signupPass').value;
+  var errEl = document.getElementById('signupErr');
+  var btn = document.getElementById('signupBtn');
+  errEl.classList.remove('show');
+  clearFieldErr('signupNameErr','signupName');
+  clearFieldErr('signupEmailErr','signupEmail');
+  clearFieldErr('signupPhoneErr','signupPhone');
+  clearFieldErr('signupPassErr','signupPass');
+
+  var hasErr = false;
+
+  // Name: required, letters + spaces only, min 2 chars
+  if (!name) {
+    showFieldErr('signupNameErr','signupName','Full name is required');
+    hasErr = true;
+  } else if (name.length < 2) {
+    showFieldErr('signupNameErr','signupName','Name must be at least 2 characters');
+    hasErr = true;
+  } else if (!/^[A-Za-z\s]+$/.test(name)) {
+    showFieldErr('signupNameErr','signupName','Name can only contain letters and spaces');
+    hasErr = true;
+  }
+
+  // Email: required + valid format
+  if (!email) {
+    showFieldErr('signupEmailErr','signupEmail','Email address is required');
+    hasErr = true;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showFieldErr('signupEmailErr','signupEmail','Please enter a valid email (e.g. name@example.com)');
+    hasErr = true;
+  }
+
+  // Phone: optional, but if entered must be valid 10-digit Indian number
+  if (phone) {
+    var cleanPhone = phone.replace(/[\s\-\(\)]/g,'').replace(/^\+91/,'');
+    if (!/^\d{10}$/.test(cleanPhone)) {
+      showFieldErr('signupPhoneErr','signupPhone','Enter a valid 10-digit mobile number (e.g. 9876543210)');
+      hasErr = true;
+    }
+  }
+
+  // Password: required, min 6 chars, must have letter + number
+  if (!password) {
+    showFieldErr('signupPassErr','signupPass','Password is required');
+    hasErr = true;
+  } else if (password.length < 6) {
+    showFieldErr('signupPassErr','signupPass','Password must be at least 6 characters');
+    hasErr = true;
+  } else if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    showFieldErr('signupPassErr','signupPass','Password must contain at least one letter and one number');
+    hasErr = true;
+  }
+
+  if (hasErr) return;
+
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  try {
+    var res = await fetch('/api/auth/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, password })
+    });
+    var data = await res.json();
+    if (data.success) {
+      currentUser = { userId: data.userId, name: data.name, email };
+      localStorage.setItem('prepgenai_user', JSON.stringify(currentUser));
+      updateAuthUI();
+      closeModal('signupModal');
+      document.getElementById('signupName').value = '';
+      document.getElementById('signupEmail').value = '';
+      document.getElementById('signupPhone').value = '';
+      document.getElementById('signupPass').value = '';
+      showToast('Account created! Welcome, ' + name + ' \ud83c\udf89');
+    } else {
+      errEl.textContent = data.message || 'Registration failed';
+      errEl.classList.add('show');
+    }
+  } catch(e) { errEl.textContent = 'Network error. Is the server running?'; errEl.classList.add('show'); }
+  btn.disabled = false; btn.textContent = 'Register Now \u2192';
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('prepgenai_user');
+  updateAuthUI();
+  showToast('Logged out successfully');
+}
+
+// ════════════════════════════════════════════
+//  NAVIGATION — same as original
+// ════════════════════════════════════════════
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(page + 'Page').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const titles = {
+    dashboard: ['Dashboard', 'Choose a field to start your interview'],
+    interview: ['Live Interview', `Field: ${state.currentField}`],
+    results: ['Results', 'Your performance summary'],
+    history: ['History', 'Your past interviews'],
+    settings: ['Settings', 'Configure your preferences']
+  };
+  const [title, sub] = titles[page] || ['—', ''];
+  document.getElementById('pageTitle').textContent = title;
+  document.getElementById('pageSubtitle').textContent = sub;
+
+  const navMap = { dashboard: 'nav-dashboard', history: 'nav-history' };
+  if (navMap[page]) document.getElementById(navMap[page])?.classList.add('active');
+
+  if (page === 'history') loadHistory();
+}
+
+// ════════════════════════════════════════════
+//  START INTERVIEW — same as original
+// ════════════════════════════════════════════
+async function startField(field) {
+  state.currentField = field;
+  state.currentIndex = 0;
+  state.results = [];
+
+  // highlight sidebar nav item
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const fieldNavMap = {
+    'Data Analytics': 'nav-da', 'Web Development': 'nav-wd',
+    'Backend Developer': 'nav-bd', 'Cyber Security': 'nav-cs',
+    'UI/UX Designer': 'nav-ux', 'DevOps Engineer': 'nav-dv'
+  };
+  if (fieldNavMap[field]) document.getElementById(fieldNavMap[field])?.classList.add('active');
+
+  showPage('interview');
+  document.getElementById('fieldName').textContent = field;
+  document.getElementById('qFieldTag').textContent = field;
+  document.getElementById('pageSubtitle').textContent = `Field: ${field}`;
+
+  try {
+    const res = await fetch(`${API}/interview/questions/${encodeURIComponent(field)}`);
+    const questions = await res.json();
+    state.questions = questions;
+
+    // Create session — pass userId if logged in
+    const sRes = await fetch(`${API}/interview/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, userId: currentUser?.userId || null })
+    });
+    const sData = await sRes.json();
+    state.sessionId = sData.sessionId;
+
+    document.getElementById('qTotal').textContent = questions.length;
+    loadQuestion(0);
+
+    speak(`Hello! I'm ARIA, your AI interview coach. Let's begin your ${field} interview. Take your time, speak clearly, and I'll provide detailed feedback. Ready? Here's your first question.`);
+
+  } catch (err) {
+    showToast('⚠️ Could not load questions. Check if server is running.');
+    console.error(err);
+    loadOfflineQuestions(field);
+  }
+}
+
+function loadOfflineQuestions(field) {
+  const fallback = {
+    "Data Analytics": ["What is mean, median and mode?","Explain p-value in hypothesis testing.","Difference between supervised and unsupervised learning?","How do you handle missing data?","What is correlation vs causation?","Explain overfitting.","What is a confusion matrix?","Describe ETL process.","What is Central Limit Theorem?","How to detect outliers?","Difference between OLAP and OLTP?","Explain data normalization.","What is A/B testing?","Difference between SQL and NoSQL?","What is feature engineering?","How does a decision tree work?","Compare Tableau, Power BI, Python.","What is dimensionality reduction?","How to evaluate a regression model?","Difference between bagging and boosting?"],
+    "Web Development": ["Difference between HTML, CSS and JavaScript?","What is the DOM?","Difference between GET and POST?","What are RESTful APIs?","Explain responsive design.","Flexbox vs CSS Grid?","Synchronous vs asynchronous JS?","Explain Promises and async/await.","What is CORS?","localStorage vs sessionStorage?","Virtual DOM in React?","What is a closure?","== vs === in JavaScript?","Event bubbling vs delegation?","HTTP status codes: 200, 404, 500?","Authentication vs authorization?","What are SPAs?","What is webpack?","SOLID principles?","Purpose of package.json?"],
+    "Backend Developer": ["What is REST vs GraphQL?","Explain middleware in Express.","What is JWT?","SQL vs NoSQL?","What is indexing in databases?","Explain event loop in Node.js.","What is caching?","How do you secure an API?","What is rate limiting?","Explain microservices architecture.","What is Docker?","Difference between SQL JOIN types?","What is a foreign key?","Explain ACID properties.","What is load balancing?","How does hashing work?","What is OAuth 2.0?","Explain CAP theorem.","What is message queuing?","How to handle database migrations?"]
+  };
+  const qs = (fallback[field] || fallback["Web Development"]).map((q, i) => ({ id: i+1, field, question: q }));
+  state.questions = qs;
+  state.sessionId = Date.now();
+  document.getElementById('qTotal').textContent = qs.length;
+  loadQuestion(0);
+}
+
+function loadQuestion(index) {
+  const q = state.questions[index];
+  if (!q) return;
+
+  document.getElementById('questionText').textContent = q.question;
+  document.getElementById('answerText').value = '';
+  document.getElementById('qCurrent').textContent = index + 1;
+  document.getElementById('qProgress').style.width = `${((index+1)/state.questions.length)*100}%`;
+  document.getElementById('feedbackPanel').innerHTML = '<h3>AI Feedback <span class="ai-chip">GROQ</span></h3><div style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0;">Answer the question to receive AI feedback.</div>';
+  document.getElementById('btnNext').disabled = true;
+  document.getElementById('recStatus').textContent = 'Ready';
+  document.getElementById('recIndicator').classList.remove('recording');
+
+  setTimeout(() => speak(q.question), 400);
+}
+
+// ════════════════════════════════════════════
+//  RECORDING — same as original
+// ════════════════════════════════════════════
+function setupSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { console.warn('Speech Recognition not supported'); return; }
+
+  state.recognition = new SpeechRecognition();
+  state.recognition.continuous = true;
+  state.recognition.interimResults = true;
+  state.recognition.lang = state.speechLang;
+
+  state.recognition.onresult = (event) => {
+    let final = '', interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    const current = document.getElementById('answerText').value;
+    const baseText = current.replace(/\[listening...\].*$/, '').trim();
+    document.getElementById('answerText').value = baseText + (baseText ? ' ' : '') + final + (interim ? ` [listening...] ${interim}` : '');
+  };
+
+  state.recognition.onend = () => { if (state.isRecording) state.recognition.start(); };
+  state.recognition.onerror = (e) => { console.warn('Speech error:', e.error); if (e.error !== 'no-speech') stopRecording(); };
+}
+
+function toggleRecording() {
+  if (state.isRecording) stopRecording();
+  else startRecording();
+}
+
+function startRecording() {
+  if (!state.recognition) { showToast('⚠️ Speech recognition not supported. Please type manually.'); return; }
+  window.speechSynthesis.cancel();
+  state.isRecording = true;
+  document.getElementById('answerText').value = '';
+  document.getElementById('btnRecord').textContent = '⏹ Stop Recording';
+  document.getElementById('btnRecord').classList.add('active');
+  document.getElementById('recStatus').textContent = 'Recording...';
+  document.getElementById('recIndicator').classList.add('recording');
+  state.recognition.lang = state.speechLang;
+  state.recognition.start();
+}
+
+function stopRecording() {
+  state.isRecording = false;
+  if (state.recognition) state.recognition.stop();
+  document.getElementById('btnRecord').textContent = '🎤 Start Recording';
+  document.getElementById('btnRecord').classList.remove('active');
+  document.getElementById('recStatus').textContent = 'Done';
+  document.getElementById('recIndicator').classList.remove('recording');
+  const raw = document.getElementById('answerText').value;
+  document.getElementById('answerText').value = raw.replace(/\[listening...\].*$/i, '').trim();
+  const answer = document.getElementById('answerText').value;
+  if (answer.trim().length > 5) {
+    document.getElementById('btnNext').disabled = false;
+    getFeedback();
+  }
+}
+
+// ════════════════════════════════════════════
+//  AI FEEDBACK — same + strengths/suggestions/better_answer in results
+// ════════════════════════════════════════════
+async function getFeedback() {
+  const question = state.questions[state.currentIndex]?.question;
+  const answer = document.getElementById('answerText').value.trim();
+  if (!answer || !question) return;
+
+  document.getElementById('feedbackPanel').innerHTML = `
+    <h3>AI Feedback <span class="ai-chip">GROQ</span></h3>
+    <div class="feedback-loading">
+      <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div style="font-size:12px;color:var(--text3);">Analyzing your answer...</div>
+    </div>`;
+
+  try {
+    const res = await fetch(`${API}/ai/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, answer, field: state.currentField })
+    });
+    const data = await res.json();
+    renderFeedback(data);
+
+    const score = data.score || 0;
+    state.results.push({
+      question, answer,
+      feedback: data.feedback || '',
+      score,
+      strengths: data.strengths || [],
+      suggestions: data.suggestions || [],
+      better_answer: data.better_answer || ''
+    });
+
+    try {
+      await fetch(`${API}/interview/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: state.sessionId, question, answer, feedback: data.feedback, score })
+      });
+    } catch(_) {}
+
+    speak(`Your score is ${score} out of 10. ${(data.feedback || '').substring(0, 100)}`);
+    document.getElementById('btnNext').disabled = false;
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('feedbackPanel').innerHTML = '<h3>AI Feedback <span class="ai-chip">GROQ</span></h3><div style="color:var(--text3);font-size:13px;padding:12px 0;">Could not get AI feedback. Check your connection.</div>';
+    document.getElementById('btnNext').disabled = false;
+  }
+}
+
+function renderFeedback(data) {
+  const score = data.score || 0;
+  const color = score >= 8 ? '#10b981' : score >= 5 ? '#f59e0b' : '#ef4444';
+  const circumference = 2 * Math.PI * 28;
+  const dashOffset = circumference * (1 - score / 10);
+
+  const suggestions = (data.suggestions || []).map(s => `<div class="sug-item">${s}</div>`).join('');
+  const strengths = (data.strengths || []).map(s => `<div class="strength-item">${s}</div>`).join('');
+
+  document.getElementById('feedbackPanel').innerHTML = `
+    <h3>AI Feedback <span class="ai-chip">GROQ</span></h3>
+    <div class="score-ring">
+      <div class="score-circle">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="28" fill="none" stroke="var(--surface)" stroke-width="6"/>
+          <circle cx="36" cy="36" r="28" fill="none" stroke="${color}" stroke-width="6"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"
+            stroke-linecap="round" style="transition:stroke-dashoffset 1s ease;"/>
+        </svg>
+        <span class="score-val" style="color:${color}">${score}</span>
+      </div>
+      <span class="score-label">Score / 10</span>
+    </div>
+    <div class="feedback-text">${data.feedback || ''}</div>
+    ${strengths ? `<div class="suggestions-list"><div class="sug-label">✓ Strengths</div>${strengths}</div>` : ''}
+    ${suggestions ? `<div class="suggestions-list"><div class="sug-label">→ Improve</div>${suggestions}</div>` : ''}
+    ${data.better_answer ? `<div class="suggestions-list"><div class="sug-label">⭐ Better Answer</div><div class="feedback-text" style="border-color:var(--green)">${data.better_answer}</div></div>` : ''}`;
+}
+
+// ════════════════════════════════════════════
+//  NEXT / SKIP / END — same as original
+// ════════════════════════════════════════════
+function nextQuestion() {
+  const answer = document.getElementById('answerText').value.trim();
+  if (answer && !state.results.find(r => r.question === state.questions[state.currentIndex]?.question)) {
+    state.results.push({ question: state.questions[state.currentIndex]?.question, answer, score: 0, feedback: 'No feedback requested', strengths: [], suggestions: [], better_answer: '' });
+  }
+  state.currentIndex++;
+  if (state.currentIndex >= state.questions.length) showResults();
+  else loadQuestion(state.currentIndex);
+}
+
+function skipQuestion() {
+  state.results.push({ question: state.questions[state.currentIndex]?.question, answer: '(skipped)', score: 0, feedback: 'Question was skipped.', strengths: [], suggestions: [], better_answer: '' });
+  state.currentIndex++;
+  if (state.currentIndex >= state.questions.length) showResults();
+  else loadQuestion(state.currentIndex);
+}
+
+function endInterview() {
+  if (confirm('End interview and see results?')) showResults();
+}
+
+// ════════════════════════════════════════════
+//  RESULTS — same + strengths/suggestions/better_answer shown
+// ════════════════════════════════════════════
+function showResults() {
+  window.speechSynthesis.cancel();
+  if (state.isRecording) stopRecording();
+
+  showPage('results');
+
+  const answered = state.results.filter(r => r.answer !== '(skipped)');
+  const avgScore = answered.length ? (answered.reduce((s,r) => s + (r.score || 0), 0) / answered.length).toFixed(1) : 0;
+
+  document.getElementById('statAnswered').textContent = answered.length;
+  document.getElementById('statScore').textContent = avgScore;
+  document.getElementById('statField').textContent = state.currentField?.split(' ')[0] || '—';
+  document.getElementById('resultsSubtitle').textContent = `${state.currentField} • ${state.results.length} questions`;
+
+  const list = document.getElementById('resultsList');
+  list.innerHTML = state.results.map((r, i) => {
+    const scoreColor = r.score >= 8 ? 'var(--green)' : r.score >= 5 ? 'var(--gold)' : 'var(--red)';
+    const strengthsHtml = (r.strengths || []).map(s => `<span class="result-tag green">${s}</span>`).join('');
+    const suggestionsHtml = (r.suggestions || []).map(s => `<span class="result-tag blue">${s}</span>`).join('');
+    return `
+      <div class="result-qa">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-size:11px;color:var(--text3);">Q${i+1}</span>
+          ${r.score > 0 ? `<span class="result-score-badge" style="color:${scoreColor}">⭐ ${r.score}/10</span>` : ''}
+        </div>
+        <div class="result-qa-q">${r.question}</div>
+        <div class="result-qa-a">"${(r.answer||'').substring(0,200)}${(r.answer||'').length > 200 ? '...' : ''}"</div>
+        ${r.feedback && r.feedback !== 'No feedback requested' && r.feedback !== 'Question was skipped.' ? `<div class="result-qa-fb">${r.feedback.substring(0,250)}</div>` : ''}
+        ${strengthsHtml ? `<div class="result-strengths">${strengthsHtml}</div>` : ''}
+        ${suggestionsHtml ? `<div class="result-strengths">${suggestionsHtml}</div>` : ''}
+        ${r.better_answer ? `<div class="result-better"><strong>💡 Better Answer</strong>${r.better_answer}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  speak(`Interview complete! You answered ${answered.length} questions with an average score of ${avgScore} out of 10. Great effort!`);
+}
+
+// ════════════════════════════════════════════
+//  HISTORY — same as original, user-aware
+// ════════════════════════════════════════════
+async function loadHistory() {
+  try {
+    const url = currentUser ? `${API}/interview/history/${currentUser.userId}` : `${API}/interview/history`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const list = document.getElementById('historyList');
+    if (!data.length) {
+      list.innerHTML = '<div style="color:var(--text3);font-size:14px;">No interview history yet. Complete an interview to see it here!</div>';
+      return;
+    }
+    list.innerHTML = data.map(s => `
+      <div class="hist-card">
+        <div>
+          <div class="hist-field">${s.field}</div>
+          <div class="hist-meta">${new Date(s.started_at).toLocaleDateString('en-IN')} · ${s.answers_count || 0} answers</div>
+        </div>
+        <div class="hist-score">${s.avg_score || '—'}<span style="font-size:12px;color:var(--text2)">/10</span></div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('historyList').innerHTML = '<div style="color:var(--text3);font-size:14px;">Could not load history. Make sure the server is running.</div>';
+  }
+}
+
+// ════════════════════════════════════════════
+//  SPEECH — same as original
+// ════════════════════════════════════════════
+function speak(text) {
+  if (!window.speechSynthesis || state.isRecording) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = state.speechLang;
+  utter.rate = 0.95;
+  utter.pitch = 1.1;
+  utter.onstart = () => document.querySelectorAll('.speaking-wave').forEach(w => w.style.animation = 'wave 0.8s ease-in-out infinite');
+  utter.onend = () => document.querySelectorAll('.speaking-wave').forEach(w => w.style.animation = 'none');
+  window.speechSynthesis.speak(utter);
+}
+
+// ── SETTINGS ──
+function saveSettings() {
+  const lang = document.getElementById('langSelect').value;
+  state.speechLang = lang;
+  localStorage.setItem('speechLang', lang);
+  if (state.recognition) state.recognition.lang = lang;
+  showToast('✅ Settings saved!');
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ── ANSWER TYPING → ENABLE NEXT + AUTO FEEDBACK ──
+document.getElementById('answerText')?.addEventListener('input', () => {
+  const val = document.getElementById('answerText').value.trim();
+  document.getElementById('btnNext').disabled = val.length < 5;
+  if (val.length > 20) {
+    clearTimeout(window._feedbackTimer);
+    window._feedbackTimer = setTimeout(getFeedback, 3000);
+  }
+});
+</script>
+</body>
+</html>
